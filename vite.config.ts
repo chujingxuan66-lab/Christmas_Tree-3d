@@ -5,8 +5,13 @@ import { removeCrossorigin } from './vite-plugin-remove-crossorigin';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // 支持通过环境变量设置 base 路径，用于 GitHub Pages 等子路径部署
+    // 如果设置了 VITE_BASE_PATH，使用该值；否则根据 BUILD_FOR_LOCAL 决定
+    const basePath = process.env.VITE_BASE_PATH || 
+                     (process.env.BUILD_FOR_LOCAL === 'false' ? '/Christmas_Tree-3d/' : './');
+    
     return {
-      base: './', // 使用相对路径，确保打包后可以直接打开使用
+      base: basePath,
       server: {
         port: 3000,
         host: '0.0.0.0',

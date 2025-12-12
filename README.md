@@ -99,13 +99,44 @@ npm run build
 
 ### GitHub Pages
 
-1. 构建项目：
+#### 方法一：使用 GitHub Actions（推荐）
+
+1. 确保仓库中已有 `.github/workflows/deploy.yml` 文件（已自动创建）
+2. 在 GitHub 仓库设置中：
+   - 进入 **Settings** > **Pages**
+   - 在 **Source** 中选择 **GitHub Actions**
+3. 推送代码到 `main` 或 `master` 分支，GitHub Actions 会自动构建并部署
+
+#### 方法二：手动部署
+
+1. 构建项目（使用 GitHub Pages 专用命令）：
 
    ```bash
-   npm run build:deploy
+   npm run build:gh-pages
    ```
 
-2. 在 GitHub 仓库设置中启用 Pages，选择 `dist` 目录作为源
+   或者手动设置 base 路径：
+
+   ```bash
+   VITE_BASE_PATH=/Christmas_Tree-3d/ npm run build:deploy
+   ```
+
+   **注意：** 将 `/Christmas_Tree-3d/` 替换为你的实际仓库名
+
+2. 在 GitHub 仓库设置中：
+
+   - 进入 **Settings** > **Pages**
+   - 在 **Source** 中选择 **Deploy from a branch**
+   - 选择分支（如 `main`）和文件夹 `/dist`
+   - 点击 **Save**
+
+3. 将 `dist` 目录的内容推送到 `gh-pages` 分支，或使用 GitHub Desktop 上传
+
+**重要提示：**
+
+- GitHub Pages 的 URL 格式是 `https://username.github.io/repository-name/`
+- 确保 `vite.config.ts` 中的 base 路径与仓库名匹配
+- 如果仓库名是 `Christmas_Tree-3d`，base 路径应该是 `/Christmas_Tree-3d/`
 
 ### Vercel / Netlify
 
@@ -161,6 +192,35 @@ nvm use 18
 ### Q: 摄像头无法使用？
 
 **A:** 确保浏览器已授予摄像头权限，或使用鼠标进行交互。
+
+### Q: GitHub Pages 部署后访问页面显示 404 或资源加载失败？
+
+**A:** 这通常是因为 base 路径配置不正确。解决方法：
+
+1. **使用正确的构建命令：**
+
+   ```bash
+   npm run build:gh-pages
+   ```
+
+   这会自动设置正确的 base 路径 `/Christmas_Tree-3d/`
+
+2. **手动设置 base 路径：**
+   如果仓库名不是 `Christmas_Tree-3d`，需要修改：
+
+   - `package.json` 中的 `build:gh-pages` 脚本
+   - `.github/workflows/deploy.yml` 中的 `VITE_BASE_PATH` 环境变量
+
+   将 `/Christmas_Tree-3d/` 替换为你的实际仓库名（格式：`/repository-name/`）
+
+3. **检查构建后的文件：**
+   构建完成后，检查 `dist/index.html` 中的资源路径：
+
+   - 应该是 `./assets/...` 或 `/Christmas_Tree-3d/assets/...`
+   - 不应该是 `/assets/...`（绝对路径在子路径下会失败）
+
+4. **重新部署：**
+   使用正确的构建命令重新构建，然后推送到 GitHub
 
 ## 📄 许可证
 

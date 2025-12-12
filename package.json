@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:local": "BUILD_FOR_LOCAL=true vite build",
     "build:deploy": "BUILD_FOR_LOCAL=false vite build",
+    "build:gh-pages": "VITE_BASE_PATH=/Christmas_Tree-3d/ BUILD_FOR_LOCAL=false vite build",
     "preview": "vite preview"
   },
   "dependencies": {
