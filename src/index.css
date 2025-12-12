@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  background-color: #010a05;
+  overflow: hidden;
+}
+
+.font-luxury {
+  font-family: 'Cinzel', serif;
+}
+
+.font-body {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-script {
+  font-family: 'Monsieur La Doulaise', cursive;
+}
+
