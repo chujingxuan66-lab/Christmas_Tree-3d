@@ -9,7 +9,8 @@
     "build:local": "BUILD_FOR_LOCAL=true vite build",
     "build:deploy": "BUILD_FOR_LOCAL=false vite build",
     "build:gh-pages": "VITE_BASE_PATH=/Christmas_Tree-3d/ BUILD_FOR_LOCAL=false vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build:gh-pages && echo '构建完成！请将 dist 目录的内容部署到 GitHub Pages'"
   },
   "dependencies": {
     "@react-three/drei": "9.99.0",
