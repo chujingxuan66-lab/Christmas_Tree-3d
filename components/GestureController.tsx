@@ -169,9 +169,15 @@ const GestureController: React.FC<GestureControllerProps> = ({ onGesture, isGuiV
           const isOpen = isCurrentlyOpen.current;
           
           // --- 3. Pinch Detection (Index finger + Thumb) ---
-          // Landmarks: 4 = thumb tip, 8 = index finger tip
+          // Landmarks: 
+          // 4 = thumb tip, 8 = index finger tip
+          // 12 = middle finger tip, 16 = ring finger tip, 20 = pinky tip
+          // 5 = index finger base, 9 = middle finger base, 13 = ring finger base, 17 = pinky base
           const thumbTip = landmarks[4];
           const indexTip = landmarks[8];
+          const middleTip = landmarks[12];
+          const ringTip = landmarks[16];
+          const pinkyTip = landmarks[20];
           
           let indexFingerPos: { x: number; y: number } | undefined;
           let isPinching = false;
@@ -214,15 +220,55 @@ const GestureController: React.FC<GestureControllerProps> = ({ onGesture, isGuiV
             const avgThumbY = avgThumb.y / count;
             
             // Calculate distance between thumb and index finger (in normalized space)
-            // Video width/height are roughly similar, so we can use simple distance
             const pinchDistance = Math.sqrt(
               Math.pow((indexTip[0] - thumbTip[0]) / video.videoWidth, 2) + 
               Math.pow((indexTip[1] - thumbTip[1]) / video.videoHeight, 2)
             );
             
-            // Pinch threshold: fingers are close together (normalized distance < 0.05)
+            // Check if other fingers (middle, ring, pinky) are extended (not in fist)
+            // In a pinch gesture, other fingers should be relatively extended
+            // In a fist, all fingers are bent
+            let otherFingersExtended = true;
+            if (middleTip && ringTip && pinkyTip && wrist) {
+              // Calculate distances from wrist to tips of other fingers
+              const middleDist = getDist(wrist, middleTip);
+              const ringDist = getDist(wrist, ringTip);
+              const pinkyDist = getDist(wrist, pinkyTip);
+              
+              // Calculate distances from wrist to bases of other fingers
+              const middleBase = landmarks[9];
+              const ringBase = landmarks[13];
+              const pinkyBase = landmarks[17];
+              
+              if (middleBase && ringBase && pinkyBase) {
+                const middleBaseDist = getDist(wrist, middleBase);
+                const ringBaseDist = getDist(wrist, ringBase);
+                const pinkyBaseDist = getDist(wrist, pinkyBase);
+                
+                // If tip distance is significantly less than base distance, finger is bent (fist)
+                // For extended fingers, tip should be further from wrist than base
+                const middleRatio = middleDist / (middleBaseDist || 1);
+                const ringRatio = ringDist / (ringBaseDist || 1);
+                const pinkyRatio = pinkyDist / (pinkyBaseDist || 1);
+                
+                // Extended fingers should have ratio > 1.2 (tip further than base)
+                // If ratio < 1.0, finger is bent (fist)
+                const EXTENDED_THRESHOLD = 1.1;
+                otherFingersExtended = 
+                  middleRatio > EXTENDED_THRESHOLD &&
+                  ringRatio > EXTENDED_THRESHOLD &&
+                  pinkyRatio > EXTENDED_THRESHOLD;
+              }
+            }
+            
+            // Pinch threshold: fingers are close together AND other fingers are extended
             const PINCH_THRESHOLD = 0.05;
-            isPinching = pinchDistance < PINCH_THRESHOLD;
+            const fingersClose = pinchDistance < PINCH_THRESHOLD;
+            
+            // Only consider it a pinch if:
+            // 1. Thumb and index finger are close together
+            // 2. Other fingers (middle, ring, pinky) are extended (not in fist)
+            isPinching = fingersClose && otherFingersExtended;
             isPinchingRef.current = isPinching;
             
             // Pull detection: check if index finger is moving upward
@@ -250,6 +296,7 @@ const GestureController: React.FC<GestureControllerProps> = ({ onGesture, isGuiV
           // Update debug state
           let stateLabel = isOpen ? `OPEN` : `CLOSED`;
           if (isPinching) {
+            // Show PINCH when pinching, PULL when actively pulling up
             stateLabel = isPulling ? `PULL` : `PINCH`;
           }
           setDebugState(stateLabel);

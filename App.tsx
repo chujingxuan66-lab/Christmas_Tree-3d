@@ -28,6 +28,8 @@ const App: React.FC = () => {
   // Photo Viewer State (for pinch and pull gesture)
   const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
   const [viewerPhotoUrl, setViewerPhotoUrl] = useState<string | null>(null);
+  const isViewingPhotoRef = useRef(false); // Track if we're in photo viewing mode
+  const lastPhotoIndexRef = useRef<number | null>(null); // Track last selected photo index
   const experienceRef = useRef<{
     getPhotoPositions: () => Array<{
       position: { x: number; y: number; z: number };
@@ -42,60 +44,69 @@ const App: React.FC = () => {
   const handleGesture = useCallback(
     (data: HandGesture) => {
       if (data.isDetected) {
-        // Handle pinch and pull gesture for photo viewing
-        if (
-          data.isPinching &&
-          data.isPulling &&
-          data.indexFinger &&
-          userImages.length > 0
-        ) {
-          // Find the photo closest to the index finger position
-          // The index finger position is normalized -1 to 1
-          // Photos are distributed around the tree in a golden spiral
-          // We map the X position (-1 to 1) to photo indices
+        // Handle pinch gesture for photo viewing
+        if (data.isPinching && data.indexFinger && userImages.length > 0) {
+          // Enter photo viewing mode on initial pinch + pull
+          if (!isViewingPhotoRef.current && data.isPulling) {
+            isViewingPhotoRef.current = true;
+          }
 
-          // Convert normalized X position (-1 to 1) to photo index (0 to userImages.length-1)
-          // Add some offset based on Y position for better selection
-          const normalizedX = (data.indexFinger.x + 1) / 2; // 0 to 1
-          const normalizedY = (data.indexFinger.y + 1) / 2; // 0 to 1
+          // If in viewing mode, keep showing photo and allow switching
+          if (isViewingPhotoRef.current) {
+            // Calculate photo index based on finger position
+            const normalizedX = (data.indexFinger.x + 1) / 2; // 0 to 1
+            const normalizedY = (data.indexFinger.y + 1) / 2; // 0 to 1
 
-          // Use X position primarily, with slight Y influence for vertical distribution
-          const photoIndex =
-            Math.floor(
-              (normalizedX * 0.8 + normalizedY * 0.2) * userImages.length
-            ) % userImages.length;
+            // Use X position primarily, with slight Y influence for vertical distribution
+            const photoIndex =
+              Math.floor(
+                (normalizedX * 0.8 + normalizedY * 0.2) * userImages.length
+              ) % userImages.length;
 
-          setViewerPhotoUrl(userImages[photoIndex]);
-          setIsPhotoViewerOpen(true);
-          return; // Don't process other gestures when viewing photo
+            // Only update if photo index changed to avoid unnecessary re-renders
+            if (lastPhotoIndexRef.current !== photoIndex) {
+              setViewerPhotoUrl(userImages[photoIndex]);
+              lastPhotoIndexRef.current = photoIndex;
+            }
+
+            setIsPhotoViewerOpen(true);
+            return; // Don't process other gestures when viewing photo
+          }
+        } else {
+          // Exit photo viewing mode when pinch is released
+          if (isViewingPhotoRef.current) {
+            isViewingPhotoRef.current = false;
+            lastPhotoIndexRef.current = null;
+            setIsPhotoViewerOpen(false);
+          }
         }
 
-        // Close photo viewer if gesture changes
-        if (isPhotoViewerOpen && (!data.isPinching || !data.isPulling)) {
-          setIsPhotoViewerOpen(false);
+        // Only process tree control gestures if not viewing photo
+        if (!isViewingPhotoRef.current) {
+          const newTarget = data.isOpen ? 0 : 1;
+          setTargetMix((prev) => {
+            if (prev !== newTarget) return newTarget;
+            return prev;
+          });
+
+          inputRef.current = {
+            x: data.position.x * 1.2,
+            y: data.position.y,
+            isDetected: true,
+          };
         }
-
-        const newTarget = data.isOpen ? 0 : 1;
-        setTargetMix((prev) => {
-          if (prev !== newTarget) return newTarget;
-          return prev;
-        });
-
-        inputRef.current = {
-          x: data.position.x * 1.2,
-          y: data.position.y,
-          isDetected: true,
-        };
       } else {
         // Mark as not detected, keep last position to avoid jumps before fade out
         inputRef.current.isDetected = false;
-        // Close photo viewer when hand is not detected
-        if (isPhotoViewerOpen) {
+        // Exit photo viewing mode when hand is not detected
+        if (isViewingPhotoRef.current) {
+          isViewingPhotoRef.current = false;
+          lastPhotoIndexRef.current = null;
           setIsPhotoViewerOpen(false);
         }
       }
     },
-    [userImages, isPhotoViewerOpen]
+    [userImages]
   );
 
   const toggleState = () => {
@@ -319,7 +330,7 @@ const App: React.FC = () => {
 
             {/* Hint Text */}
             <div className="absolute bottom-8 left-0 right-0 text-center text-white/60 text-sm font-luxury tracking-widest">
-              松开手势关闭
+              保持捏合查看图片，松开关闭
             </div>
 
             <style>{`

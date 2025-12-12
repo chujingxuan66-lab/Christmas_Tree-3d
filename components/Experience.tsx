@@ -22,30 +22,53 @@ interface ExperienceProps {
   signatureText?: string;
 }
 
-// COLORS FOR REALISTIC OBJECTS
+// COLORS FOR REALISTIC OBJECTS - Vibrant, cool and rich colors
 const BALL_COLORS = [
-  "#8B0000", // Dark Red
-  "#D32F2F", // Bright Red
-  "#1B5E20", // Dark Green
-  "#D4AF37", // Gold
-  "#C0C0C0", // Silver
-  "#191970", // Midnight Blue
+  "#FF1744", // Vibrant Red
+  "#FF5252", // Bright Pink-Red
+  "#4CAF50", // Emerald Green
+  "#00E676", // Neon Green
+  "#FFD700", // Gold
+  "#FFC107", // Amber
+  "#2196F3", // Bright Blue
+  "#00BCD4", // Cyan
+  "#3F51B5", // Indigo
+  "#9C27B0", // Purple
+  "#E91E63", // Pink
+  "#FF5722", // Deep Orange
+  "#FFEB3B", // Yellow
+  "#00E5FF", // Light Cyan
+  "#7C4DFF", // Deep Purple
+  "#FF4081", // Hot Pink
+  "#18FFFF", // Aqua
+  "#FF6F00", // Orange
 ];
 
 const BOX_COLORS = [
-  "#800000", // Maroon
-  "#1B5E20", // Forest Green
-  "#D4AF37", // Gold
+  "#E53935", // Bright Red
+  "#43A047", // Bright Green
+  "#FFD700", // Gold
   "#FFFFFF", // White
-  "#4B0082", // Indigo/Deep Purple
-  "#2F4F4F", // Dark Slate Gray
-  "#008080", // Teal
-  "#8B4513", // Bronze/SaddleBrown
-  "#DC143C", // Crimson
+  "#7B1FA2", // Bright Purple
+  "#546E7A", // Blue Gray
+  "#00ACC1", // Bright Teal
+  "#FF8F00", // Bright Orange
+  "#E91E63", // Pink
+  "#3F51B5", // Indigo
+  "#00BCD4", // Cyan
+  "#FF5722", // Deep Orange
 ];
 
-const STAR_COLORS = ["#FFD700", "#FDB931"]; // Gold variations
-const CRYSTAL_COLORS = ["#F0F8FF", "#E0FFFF", "#B0E0E6"]; // Ice Blues and Whites for Snowflakes
+const STAR_COLORS = ["#FFD700", "#FFC107", "#FFEB3B", "#FFF59D", "#FFE082"]; // Gold and Yellow variations - more vibrant
+const CRYSTAL_COLORS = [
+  "#E0F7FA",
+  "#B2EBF2",
+  "#80DEEA",
+  "#4DD0E1",
+  "#26C6DA",
+  "#00BCD4",
+  "#00ACC1",
+]; // Bright Ice Blues and Cyans - more cool tones
 // Set Candy base to white, as stripes are handled via texture in Ornaments.tsx
 const CANDY_COLORS = ["#FFFFFF"];
 
@@ -279,41 +302,52 @@ const SceneContent: React.FC<ExperienceProps> = ({
 }) => {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Aggressive performance optimization: Drastically reduced counts to prevent WebGL context loss
-  // Reduced by ~70% from original to prevent GPU resource exhaustion
+  // Object counts restored to original values (without HDR environment)
   const photoCount = Math.min(
-    userImages && userImages.length > 0 ? userImages.length : 5,
-    5
+    userImages && userImages.length > 0 ? userImages.length : 10,
+    10
   );
 
   return (
     <>
       <SceneController inputRef={inputRef} groupRef={groupRef} />
 
-      <ambientLight intensity={0.4} />
+      {/* Enhanced ambient light for better ornament visibility */}
+      <ambientLight intensity={0.7} />
+
+      {/* Additional ambient light with warm tone for ornaments */}
+      <ambientLight intensity={0.3} color="#fff8e1" />
+
       <spotLight
         position={[20, 20, 20]}
         angle={0.4}
         penumbra={1}
-        intensity={2.0}
+        intensity={2.5}
         color="#fff5d0"
         castShadow={false}
       />
-      <pointLight position={[-10, 5, -10]} intensity={1.2} color="#00ff00" />
-      <pointLight position={[10, -5, 10]} intensity={1.2} color="#ff0000" />
-      <pointLight position={[0, 10, 10]} intensity={0.5} color="#ffffff" />
 
-      {/* Disabled HDR environment to save GPU memory - using simple ambient instead */}
-      {/* <Environment 
-        files='public/hdri/potsdamer_platz_1k.hdr'
-        background={false} 
+      {/* Enhanced point lights for better ornament illumination */}
+      <pointLight position={[-10, 5, -10]} intensity={1.5} color="#ffffff" />
+      <pointLight position={[10, -5, 10]} intensity={1.5} color="#ffffff" />
+      <pointLight position={[0, 10, 10]} intensity={1.0} color="#ffffff" />
+
+      {/* Additional point lights for better coverage */}
+      <pointLight position={[0, 15, 0]} intensity={0.8} color="#fff5d0" />
+      <pointLight position={[-15, 8, -15]} intensity={0.6} color="#e3f2fd" />
+      <pointLight position={[15, 8, -15]} intensity={0.6} color="#fce4ec" />
+
+      {/* HDR Environment disabled to prevent WebGL context loss */}
+      {/* <Environment
+        files="public/hdri/potsdamer_platz_1k.hdr"
+        background={false}
       /> */}
 
-      {/* Drastically reduced stars count from 3000 to 500 to save GPU memory */}
+      {/* Stars count restored to original */}
       <Stars
         radius={100}
         depth={50}
-        count={500}
+        count={3000}
         factor={4}
         saturation={0}
         fade
@@ -327,39 +361,39 @@ const SceneContent: React.FC<ExperienceProps> = ({
         <Foliage mixFactor={mixFactor} colors={colors} />
         <SpiralLights mixFactor={mixFactor} />
 
-        {/* Drastically reduced ornament counts to prevent WebGL context loss - ~70% reduction */}
+        {/* Ornament counts restored to original values */}
         <Ornaments
           mixFactor={mixFactor}
           type="BALL"
-          count={20}
+          count={60}
           scale={0.5}
           colors={BALL_COLORS}
         />
         <Ornaments
           mixFactor={mixFactor}
           type="BOX"
-          count={10}
+          count={30}
           scale={0.6}
           colors={BOX_COLORS}
         />
         <Ornaments
           mixFactor={mixFactor}
           type="STAR"
-          count={8}
+          count={25}
           scale={0.5}
           colors={STAR_COLORS}
         />
         <Ornaments
           mixFactor={mixFactor}
           type="CRYSTAL"
-          count={12}
+          count={40}
           scale={0.4}
           colors={CRYSTAL_COLORS}
         />
         <Ornaments
           mixFactor={mixFactor}
           type="CANDY"
-          count={12}
+          count={40}
           scale={0.8}
           colors={CANDY_COLORS}
         />
